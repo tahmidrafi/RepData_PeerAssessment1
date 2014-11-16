@@ -108,6 +108,28 @@ Which shows that the most stepped interval is **`r mostStepped$interval[1]`**
 
 ## Imputing missing values
 
+#### Number of missing values
+
+```{r naCount}
+sum(is.na(raw.data))
+```
+
+Let's fill out the `NA`'s with the mean value for the interval averages across all days
+
+```{r imputeNA}
+for (i in 1:nrow(raw.data))
+{
+  if( is.na(raw.data[i,][['steps']]) ) {
+    interval = raw.data[i,][['interval']]
+    minute <- (interval %/% 100) * 60 + (interval %% 100)
+    index = minute / 5 + 1
+    raw.data[i,][['steps']] = steps.per_interval[index,][['mean.steps']]
+    
+  }
+}
+
+summary(raw.data)
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?

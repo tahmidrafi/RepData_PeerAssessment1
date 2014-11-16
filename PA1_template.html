@@ -177,6 +177,32 @@ raw.data</code></pre>
 </div>
 <div id="imputing-missing-values" class="section level2">
 <h2>Imputing missing values</h2>
+<div id="number-of-missing-values" class="section level4">
+<h4>Number of missing values</h4>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sum</span>(<span class="kw">is.na</span>(raw.data))</code></pre>
+<pre><code>## [1] 2304</code></pre>
+<p>Let’s fill out the <code>NA</code>’s with the mean value for the interval averages across all days</p>
+<pre class="sourceCode r"><code class="sourceCode r">for (i in <span class="dv">1</span>:<span class="kw">nrow</span>(raw.data))
+{
+  if( <span class="kw">is.na</span>(raw.data[i,][[<span class="st">'steps'</span>]]) ) {
+    interval =<span class="st"> </span>raw.data[i,][[<span class="st">'interval'</span>]]
+    minute &lt;-<span class="st"> </span>(interval %/%<span class="st"> </span><span class="dv">100</span>) *<span class="st"> </span><span class="dv">60</span> +<span class="st"> </span>(interval %%<span class="st"> </span><span class="dv">100</span>)
+    index =<span class="st"> </span>minute /<span class="st"> </span><span class="dv">5</span> +<span class="st"> </span><span class="dv">1</span>
+    raw.data[i,][[<span class="st">'steps'</span>]] =<span class="st"> </span>steps.per_interval[index,][[<span class="st">'mean.steps'</span>]]
+    
+  }
+}
+
+<span class="kw">summary</span>(raw.data)</code></pre>
+<pre><code>##      steps                date          interval     
+##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0  
+##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8  
+##  Median :  0.00   2012-10-03:  288   Median :1177.5  
+##  Mean   : 37.38   2012-10-04:  288   Mean   :1177.5  
+##  3rd Qu.: 27.00   2012-10-05:  288   3rd Qu.:1766.2  
+##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
+##                   (Other)   :15840</code></pre>
+</div>
 </div>
 <div id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends" class="section level2">
 <h2>Are there differences in activity patterns between weekdays and weekends?</h2>
