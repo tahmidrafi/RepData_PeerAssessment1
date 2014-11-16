@@ -181,19 +181,20 @@ raw.data</code></pre>
 <h4>Number of missing values</h4>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sum</span>(<span class="kw">is.na</span>(raw.data))</code></pre>
 <pre><code>## [1] 2304</code></pre>
-<p>Let’s fill out the <code>NA</code>’s with the mean value for the interval averages across all days</p>
-<pre class="sourceCode r"><code class="sourceCode r">for (i in <span class="dv">1</span>:<span class="kw">nrow</span>(raw.data))
+<p>Analyzing two previous graph’s we can see that there are days where all the values are <code>NA</code>’s. So, if we use daily means to impute the NA values, then we will have some <code>NaN</code>’s. But in the Average per Interval their are no NA’s. So this is a good option to fill out the NA’s by average steps per Interval. Let’s fill out the <code>NA</code>’s with the mean value for the interval averages across all days.</p>
+<pre class="sourceCode r"><code class="sourceCode r">imputed_data &lt;-<span class="st"> </span>raw.data
+for (i in <span class="dv">1</span>:<span class="kw">nrow</span>(imputed_data))
 {
-  if( <span class="kw">is.na</span>(raw.data[i,][[<span class="st">'steps'</span>]]) ) {
-    interval =<span class="st"> </span>raw.data[i,][[<span class="st">'interval'</span>]]
+  if( <span class="kw">is.na</span>(imputed_data[i,][[<span class="st">'steps'</span>]]) ) {
+    interval =<span class="st"> </span>imputed_data[i,][[<span class="st">'interval'</span>]]
     minute &lt;-<span class="st"> </span>(interval %/%<span class="st"> </span><span class="dv">100</span>) *<span class="st"> </span><span class="dv">60</span> +<span class="st"> </span>(interval %%<span class="st"> </span><span class="dv">100</span>)
     index =<span class="st"> </span>minute /<span class="st"> </span><span class="dv">5</span> +<span class="st"> </span><span class="dv">1</span>
-    raw.data[i,][[<span class="st">'steps'</span>]] =<span class="st"> </span>steps.per_interval[index,][[<span class="st">'mean.steps'</span>]]
+    imputed_data[i,][[<span class="st">'steps'</span>]] =<span class="st"> </span>steps.per_interval[index,][[<span class="st">'mean.steps'</span>]]
     
   }
 }
 
-<span class="kw">summary</span>(raw.data)</code></pre>
+<span class="kw">summary</span>(imputed_data)</code></pre>
 <pre><code>##      steps                date          interval     
 ##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0  
 ##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8  
@@ -202,6 +203,38 @@ raw.data</code></pre>
 ##  3rd Qu.: 27.00   2012-10-05:  288   3rd Qu.:1766.2  
 ##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
 ##                   (Other)   :15840</code></pre>
+<p>Let’s Make another Histogram from the imputed data</p>
+<pre class="sourceCode r"><code class="sourceCode r">New_steps.per_day &lt;-<span class="st"> </span>imputed_data %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(steps, date) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">group_by</span>(date) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">summarize</span>(<span class="dt">total.steps =</span> <span class="kw">sum</span>(steps)) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">arrange</span>(<span class="kw">as.Date</span>(date))
+
+<span class="kw">head</span>(New_steps.per_day, <span class="dt">n=</span><span class="dv">10</span>)</code></pre>
+<pre><code>## Source: local data frame [10 x 2]
+## 
+##          date total.steps
+## 1  2012-10-01    10766.19
+## 2  2012-10-02      126.00
+## 3  2012-10-03    11352.00
+## 4  2012-10-04    12116.00
+## 5  2012-10-05    13294.00
+## 6  2012-10-06    15420.00
+## 7  2012-10-07    11015.00
+## 8  2012-10-08    10766.19
+## 9  2012-10-09    12811.00
+## 10 2012-10-10     9900.00</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">hist</span>(New_steps.per_day$total.steps, 
+     <span class="dt">xlab =</span> <span class="st">&quot;Total no of steps&quot;</span>, 
+     <span class="dt">main =</span> <span class="st">&quot;Histogram of total number of steps&quot;</span>, 
+     <span class="dt">col =</span> <span class="st">&quot;grey&quot;</span>, <span class="dt">breaks =</span> <span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">25000</span>,<span class="dv">1000</span>))</code></pre>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAHgCAMAAABNUi8GAAAAbFBMVEX9/v0AAAAAADkAAGUAOY8AZrU5AAA5ADk5AGU5OQA5OTk5j9plAABlADllj49ltbVltf2POQCPOTmPtY+P2/21ZgC1ZmW124+1/rW1/tq1/v2+vr7ajzna/rXa/v39tWX924/9/rX9/tr9/v0gdPm3AAAAJHRSTlP//////////////////////////////////////////////wBYLA0NAAAACXBIWXMAAA7DAAAOwwHHb6hkAAASHklEQVR4nO3d6WKj2BFA4eBFk0SaRM5YWRxibOv93zFwi+WKTSoD1aXr8/3oUUuIxZxGgDXwpzPg2J9+9QwAcwgUrhEoXCNQuEagcI1A4RqBwjUChWsECtcIFK4RKFwjULhGoHCNQOEagcI1AoVrBArXCBSuEShcI1C4RqBwjUDhGoHCNQKFawQK1wgUrhEoXCNQuEagcI1A4RqBwjUChWspBPr1kj29y3+f279E/vm29hRPWVZOamrsl8+MzNAN43/UzXM8Q5NzcpfSD/TzoFzZ1xVlDtl+Yuz9ZywCjWZoZk7uUnKBDqi3Rtfl2cPr5Nj7z1gEGs3QgrG4lFyg9V/yaptSPag+/MKK+th1W5nyyYfXsP7KVfvHrlq94eVqNX8esudqi3SsxhGv93YEYZTyynDszTPt+KJA8zBVeavUU05sPzLF8sV/H7Lmfe3ndzuz0zM0tuTt++vRSrbtcL4lGmj46YdV0aym+plqwHKQaoX+pXv66b2Ql8u1XOYS6bZB3QhGAu29+PjWje8i0PbZXqC9KZ6ix/Wr1cNmZmdmaLjk0fub0VaDdsP5lkigjTrQapsU9sz2TQnl1ka63Yfnn8PakrLqZp/DQJLL/txu0Zo9u3gEg4/4+MXwTDS+y0BlkvtBoJdTPIW5auazHDAM18zs3AwNlzx6vyxyGG08nGtpBlquvHbTEK2m+j9tG1LLsRlPntWrrlzx8mcoLB7NudkveL0y9m58l4EeQ1nP/UB7Uzx1uwGSVvnW3sxOzNBgyeP3n+T91fPxcK6lGWj9TIir2aKFSqo12Ty+WLXNOJpti/zZBRqPYBDoxYsSTje+3j5oM+rePujlFOv4quHDjmb9uRwfC03M0GDJ4/dHo42Hcy2RQPv7oM1u3bHbjoTDhPIz7dg8jgMN60teGQ80HsEg0IsXm2Sb8c0G2uxUDAJt4yuy8UCnZqi/5PH760DDW6LhXEs00HN3lHrTFlS6mAlUuQWNxve9QOMtaLQPcnULOljy+P3RaOPhXEs00K9/tKdyru2DhpVVNHuHY7kEun3QaHwTgcrjcJQyFmi7s9hsKbv3z89Qf8nj90ejjYdzLc1A5Qi3OeNUrbzpo/hmCyp7rlNb0Kmj+OHY8/qsajO+yUAl3qlAm8NtqUqOoC4CHZ+h4ZJH749GGw/nWpqBNmf56o1UdKby+dw/D9rtg84dJJ3jEUShDMcenvlPN76JQNuDl4lA27OU9c6inLscfJIPZmiw5NH749FGw7mWaKCy/uXjq/7dTXim3h0Lm5LBUfzDa95+pg4DjUYQhzIce3imG99EoOEdT/+bPIrvfpMU/vF0+5vnKzM0WPLu/Sf5lyOjjYbzLIVAv+nk/uNtbf73OId+YqCnsN8m58t/FAK9D82pQff7X2sj0Dshxw0/7QOeQIHVEShcI1C4RqBwjUDhGoHCNQKFawQK1wgUrhEoXCNQuEagcI1A4RqBwjUChWsECtcIFK4RKFwjULhGoHCNQOEagcI1AoVrBArXCBSuEShcI1C4RqBwjUDhGoHCNQKFawQK1wgUrhEoXCNQuEagcI1A4RqBwjUC1clG/eq5ShiB6mT/HUGg2yFQHQI1RqA6BGqMQHUI1BiB6hCoMQLVIVBjBKpDoMYIVIdAjRGoDoEaI1AdAjVGoDoEaoxAdQjUGIHqEKgxAtUhUGMEqkOgxghUh0CNEagOgRojUB0CNUagOgRqjEB1CNQYgeoQqDEC1SFQYwSqQ6DGCFSHQI0RqA6BGiNQHQI1RqA6BGqMQHUI1BiB6hCoMQLVIVBjBKpDoMYIVIdAjRGoDoEaI1AdAjVGoDoEaoxAdQjUGIHqEKgxAtUhUGOaQD8P+/LPIsuyx7et5sc7AjWmDjR/eq8eHTebI98I1Jg20DrNkOlPRKDGtIF+7EKgxU/9kCdQY2xBdQjUmC7Q6r6Uz+fmcOknIlBjytNMZaMPr+WB/E/tk0CtcR5Uh0CNrRPoz7kxNYEaW3kLmvyqIlBjBKpDoMb0R/Fi4jxo8quKQI2ptqBfL9fOzye/qgjUmO4j/uvleX6A5FcVgRpT7oMW2fy3RJJfVQRqjIMkHQI1RqA6BGqMQHUI1BiB6hCoMQLVIVBjBKpDoMYIVIdAjRGoDoEaI1AdAjVGoDoEaoxAdQjUGIHqEKgxAtUhUGMEqkOgxghUh0CNEagOgRojUB0CNUagOgRqjEB1CNQYgeoQqDEC1SFQYwSqQ6DGCFSHQI0RqA6BGiNQHQI1RqA6BGqMQHUI1BiB6hCoMQLVIVBjBKpDoMYIVIdAjRGoDoEaI1AdAjVGoDoEaoxAdQjUGIHqEKgxAtUhUGMEqkOgxghUh0CNEagOgRojUB0CNUagOgRqjEB1CNQYgeoQqDEC1SFQYwSqQ6DGCFSHQI0RqA6BGiNQHQI1RqA6BGqsDfTzkD0vH13yq4pAjUVb0DzLsv3C0SW/qgjU2OVH/OJGk19VBGqsvw9aJfr49u3RJb+qCNTYRaBFWefx/PXy9P7d0SW/qgjUWBdoeZSUSZnF9zehya8qAjUWHcU/vC4fXfKrikCNcR5Uh0CNRYGeyg/4YuGJpuRXFYEa6wI9hR3Qz8Oi0/XJryoCNRbtgx7DfxccIZ0JFGtrA/16kQ/3nEDnEKix7iM+z6pN6MeO3yTNIVBj0UHSxy7LsvlzTV8vWTC5lU1+VRGoMdVpprw5xp882E9+VRGoMU2gzW5qKZ/4bWjyq4pAjXWBXv34bg/0z9PH+smvKgI1Fp0HvXr4zhaUQM1F50GvH77Lgf6ZfVACNTM4UT+r+sZTZfL7eMmvKgI1Fp2oX+F/SSJQrKzbBy2yGzahE7LWGvPkGYEai/+vzmtH8TdIflURqDG+D6pDoMY0gbYb2entbPKrikCNRYGW/T29n+ZONn29XPv8T35VEaix6CDp4TV/ep8/HXr1UD/5VUWgxi6+D1r9fmj++6DXDvWTX1UEauziRH0VKN+on0WgxgZb0NP3r9pwJlCsrb8Pmi84XX8mUKzt8ij+2jfqr0p+VRGoMU7U6xCoMQLVIVBj/C5eh0CN9begy84yEShWNviIP3HpmzkEamwQKCfqZxGosUGgXPpmFoEa6wfK1e3mEaixwVH8ot90EihWxnlQHQI1RqA6BGpseKJ+0bn65FcVgRrr/2/HfJtpHoEai74PKmVOXXXpNsmvKgI11n3E/y5ftONE/SwCNTbYgvKN+lkEauziG/Xln/mybywnv6oI1Fj/G/XLztMTKFbGeVAdAjVGoDoEakx16Zvrkl9VBGpMd+mbq5JfVQRqTHnpm2uSX1UEaoxL3+gQqDEufaNDoMa49I0OgRrj0jc6BGqM86A6BGrsYh90ueRXFYEa091p7qrkVxWBGosOkpZd9EYkv6oI1BgXD9MhUGMcJOkQqDEC1SFQYxLoOkdIZwLF2qJA1zjRlPyqIlBjBKpDoMYIVIdAjRGoDoEaI1AdAjVGoDoEaqwJdI1L250JFGvjRL0OgRojUB0CNUagOgRqjEB1CNQYgeoQqDEC1SFQYwSqQ6DGCFSHQI0RqA6BGiNQHQI1RqA644He7FfP/v0hUJ3xQG98jk2tHoHqEKgxAtUhUGMEqkOgxghUh0CNEagOgRojUB0CNUagOgRqjEB1CNQYgeoQqDEC1SFQY5pA5TaJxdz/mpz8GiBQY+pAq5t9TV+uMfk1QKDGtIHWaeYT96NLfg0QqDFtoB+7EGjvjgv3/32yW78cZxQo39VrsAUVo43dONwWgS55c1J0gVb/jp/PzeHSiLv9IRKoU8rTTGWjD6/lgfzUdfDu9odIoE5xHlQQqFMEKgjUKQIVBOoUgQoCdYpABYE6RaCCQJ0iUEGgThGoIFCnCFQQqFMEKgjUKQIVBOoUgQoCdYpAhVGgt37Nk0AbBCqMAr21OwJtEKggUKcIVBCoUwQqCNQpAhUE6hSBCgJ1ikAFgTpFoIJAnSJQQaBOEaggUKcIVBCoUwQqCNQpAhUE6hSBCgJ1ikAFgTpFoIJAnSJQQaBOEaggUKcIVBCoUwQqCNQpAhUE6hSBCgJ1ikAFgTpFoIJAnSJQQaBOEaggUKcIVBCoUwQqCNQpAhUE6hSBCgJ1yiJQm3tLj05ltLFRY0XcONzCQG+endV/ZPfAJFCTn/Z4ETcPuOA5qwFX/5HdAwLVpUOgxghUlw6BGiNQXToEaoxAdekQqDEC1aVDoMYIVJcOgRojUF06BGqMQHXpEKgxAtWlQ6DGCFSXDoEaI1BdOgRqjEB16RCoMQLVpUOgxghUlw6BGnMV6PhXI281uqLX/kqnt0BHF/DmtXWzW8e4Pl+B2qzoJQO6C/TWAW99s7eNN4HqBiRQYwSqG5BAjRGobkACNUagugEJ1BiB6gYkUGMEqhuQQI0RqG5AAjVGoLoBCdQYgeoGJFBjBKobkECN6QL9epFfzT6+TQxAoBsOuOhne+ub7zrQPNvLg6J50EegGw646Gd765vvOdCvlzbL/Ol9dBAC3XDART/bW998z4F+Ho7Nw+LyQ37+e1m3f6sLSfpmm8HKW1BgXcp90HoTOrkPCqxLdxT/eZBtNttPGFn5PCiwLgKFawQK1wgUrhEoXCNQuEagcI1A4ZpFoL/2F8H45ZbEYxKowTTSmgoL0yJQj1NhYVoE6nEqLEyLQD1OhYVpEajHqbAwLQL1OBUWpkWgHqfCwrQI1ONUWJgWgXqcCgvT4ledcI1A4RqBwjUChWsECtcIFK4RKFwjULhGoHCNQOEagcI1AoVrBArXNg+0yLKH1w3GK5cqfY6nMHyw0Mef38bHu+6UZDKbLlC4Pct+fJwrLkw7mfUWZutAi3Jeii0K/fjttTeF4YOFPg/hSvwzE1hlSvVktlygr5fy3XkVzKYL001mvYXZOFC5rP3pef0xN7dxaKcwfLB0CnI/qJkJrDKlejKbLtDHrrp2e/74tu3CtJNZcWE2DrSb5bXlz70pDB8sm0CR7cOPeWYCa0ypmcz2C1RttzZemGYyKy7M1oGGTX2xQaCnv8ruTjuF4YPF05BApyew0pRkBNsv0Gl2GVb7sZWTWXFhNg5UdjY22An9PFQ3cjjtuykMHyyeSPgxzkxgpSmFyWy/QNWtWbZfmDCZFRfmXgOtR//4lkqg7cOtJlM0x0gbL0zW7l6usjB3+xEvo98dk/mID7ZbILm11eYLE99Ba5WFuduDJBn9b3O7/YtHb3GQdL4MdKsFqu8DvPXC5PEd3lZZmHs9zSTLWcyeOFmssDjNdPHvYKsFau4RuPHCNJNZcWHu9kR9WMRyN3zDE/X1pm3rE/XNUfyGC/SxazZsmy5MN5n1FmbzX3XmG/2q83zKMvn32k5h+GCh+rN3ZgKrTKmezIYLlMuVjqtxbLkw0WRWWxi+LALXCBSuEShcI1C4RqBwjUDhGoHCNQKFawQK1wgUrhEoXCNQuEagcI1A4RqBwjUChWsECtcIFK4RKFwjULhGoHCNQOEagcI1AoVrBArXCBSuEShcI9BbyZ1VsvqWB6I4xq8fR97Vl2fxBQovx4ARBKrR3l1FXDR5U6Cfh33v7wQ6j0A1Vgj0OPt39BGoRhNoEe5h8bHLsqf35kqDdWufh78f5MqDRRZ9nHfvkD2E6lF2rMeQN7fE+GMnb5FXf8EC+kOgGnWgRRnP5+FZmqyu1Zo/vHaBVrcJqi7SWg90HrzjXF+CuHwy/L0aurr2a5nlMQzZvPqLltIVAtWQQOUq1sXDa5XX5++v0lsb6D78vR3o3H9HpbksfRhD2C+t7i8QLlCcP71vdtOJO0SgGhKoXIG9/LPNLcuiQOXjvh3oPPaO+v6cYWiJuLolhlzZvcqYQhsEqhEHWrYlH9DlbuW/dhOB1k9evqMS7gssbyrq01fNPVvKXutXQaA6I1vQ8JePqUCntqDBST7y2zsKdIHWr9otmF8EqjGyDyp3oxt+xM/vg57rQWUftH5O9kFP1V0Ez5yBqhGoxuAofl9vPMP9KS8CnT+Kb27IEg6Q8nBbjOpWxPXBf3u7FhCoyuV50OpmK0/v4a4qp3bj2AY6dh602ywW7e1a6vOg5Yb4Y/e3XXcKlT4DAvWj3mFFjED9INARBOoHgY4gULhGoHCNQOEagcI1AoVrBArXCBSuEShcI1C4RqBwjUDhGoHCNQKFawQK1wgUrhEoXCNQuEagcI1A4RqBwjUChWv/B9uLvyLYUbinAAAAAElFTkSuQmCC" /></p>
+<pre class="sourceCode r"><code class="sourceCode r">mean.new.step &lt;-<span class="st"> </span><span class="kw">mean</span>(New_steps.per_day$total.steps)
+<span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;The mean total number of steps taken per day is&quot;</span>, <span class="kw">format</span>(mean.new.step, <span class="dt">nsmall =</span> <span class="dv">2</span>, <span class="dt">digits =</span> <span class="dv">2</span>)))</code></pre>
+<pre><code>## [1] &quot;The mean total number of steps taken per day is 10766.19&quot;</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">median.new.step &lt;-<span class="st"> </span><span class="kw">median</span>(New_steps.per_day$total.steps)
+<span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;The median total number of steps taken per day is&quot;</span>, <span class="kw">format</span>(median.new.step, <span class="dt">nsmall =</span> <span class="dv">2</span>, <span class="dt">digits =</span> <span class="dv">2</span>)))</code></pre>
+<pre><code>## [1] &quot;The median total number of steps taken per day is 10766.19&quot;</code></pre>
 </div>
 </div>
 <div id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends" class="section level2">

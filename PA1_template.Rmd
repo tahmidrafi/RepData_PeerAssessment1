@@ -114,22 +114,50 @@ Which shows that the most stepped interval is **`r mostStepped$interval[1]`**
 sum(is.na(raw.data))
 ```
 
-Let's fill out the `NA`'s with the mean value for the interval averages across all days
+Analyzing two previous graph's we can see that there are days where all the values are `NA`'s. So, if we use daily means to impute the NA values, then we will have some `NaN`'s. But in the Average per Interval their are no NA's. So this is a good option to fill out the NA's by average steps per Interval.   Let's fill out the `NA`'s with the mean value for the interval averages across all days.
 
 ```{r imputeNA}
-for (i in 1:nrow(raw.data))
+imputed_data <- raw.data
+for (i in 1:nrow(imputed_data))
 {
-  if( is.na(raw.data[i,][['steps']]) ) {
-    interval = raw.data[i,][['interval']]
+  if( is.na(imputed_data[i,][['steps']]) ) {
+    interval = imputed_data[i,][['interval']]
     minute <- (interval %/% 100) * 60 + (interval %% 100)
     index = minute / 5 + 1
-    raw.data[i,][['steps']] = steps.per_interval[index,][['mean.steps']]
+    imputed_data[i,][['steps']] = steps.per_interval[index,][['mean.steps']]
     
   }
 }
 
-summary(raw.data)
+summary(imputed_data)
 ```
 
+Let's Make another Histogram from the imputed data
 
+```{r summarizeNewData}
+New_steps.per_day <- imputed_data %>% 
+  select(steps, date) %>% 
+  group_by(date) %>% 
+  summarize(total.steps = sum(steps)) %>% 
+  arrange(as.Date(date))
+
+head(New_steps.per_day, n=10)
+```
+
+```{r drawNewHistogram}
+hist(New_steps.per_day$total.steps, 
+     xlab = "Total no of steps", 
+     main = "Histogram of total number of steps", 
+     col = "grey", breaks = seq(0,25000,1000))
+```
+
+```{r calcutaleNewMeanMedian}
+mean.new.step <- mean(New_steps.per_day$total.steps)
+print(paste("The mean total number of steps taken per day is", format(mean.new.step, nsmall = 2, digits = 2)))
+
+median.new.step <- median(New_steps.per_day$total.steps)
+print(paste("The median total number of steps taken per day is", format(median.new.step, nsmall = 2, digits = 2)))
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+
+

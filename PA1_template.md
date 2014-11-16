@@ -184,22 +184,23 @@ sum(is.na(raw.data))
 ## [1] 2304
 ```
 
-Let's fill out the `NA`'s with the mean value for the interval averages across all days
+Analyzing two previous graph's we can see that there are days where all the values are `NA`'s. So, if we use daily means to impute the NA values, then we will have some `NaN`'s. But in the Average per Interval their are no NA's. So this is a good option to fill out the NA's by average steps per Interval.   Let's fill out the `NA`'s with the mean value for the interval averages across all days.
 
 
 ```r
-for (i in 1:nrow(raw.data))
+imputed_data <- raw.data
+for (i in 1:nrow(imputed_data))
 {
-  if( is.na(raw.data[i,][['steps']]) ) {
-    interval = raw.data[i,][['interval']]
+  if( is.na(imputed_data[i,][['steps']]) ) {
+    interval = imputed_data[i,][['interval']]
     minute <- (interval %/% 100) * 60 + (interval %% 100)
     index = minute / 5 + 1
-    raw.data[i,][['steps']] = steps.per_interval[index,][['mean.steps']]
+    imputed_data[i,][['steps']] = steps.per_interval[index,][['mean.steps']]
     
   }
 }
 
-summary(raw.data)
+summary(imputed_data)
 ```
 
 ```
@@ -213,5 +214,63 @@ summary(raw.data)
 ##                   (Other)   :15840
 ```
 
+Let's Make another Histogram from the imputed data
 
+
+```r
+New_steps.per_day <- imputed_data %>% 
+  select(steps, date) %>% 
+  group_by(date) %>% 
+  summarize(total.steps = sum(steps)) %>% 
+  arrange(as.Date(date))
+
+head(New_steps.per_day, n=10)
+```
+
+```
+## Source: local data frame [10 x 2]
+## 
+##          date total.steps
+## 1  2012-10-01    10766.19
+## 2  2012-10-02      126.00
+## 3  2012-10-03    11352.00
+## 4  2012-10-04    12116.00
+## 5  2012-10-05    13294.00
+## 6  2012-10-06    15420.00
+## 7  2012-10-07    11015.00
+## 8  2012-10-08    10766.19
+## 9  2012-10-09    12811.00
+## 10 2012-10-10     9900.00
+```
+
+
+```r
+hist(New_steps.per_day$total.steps, 
+     xlab = "Total no of steps", 
+     main = "Histogram of total number of steps", 
+     col = "grey", breaks = seq(0,25000,1000))
+```
+
+![](PA1_template_files/figure-html/drawNewHistogram-1.png) 
+
+
+```r
+mean.new.step <- mean(New_steps.per_day$total.steps)
+print(paste("The mean total number of steps taken per day is", format(mean.new.step, nsmall = 2, digits = 2)))
+```
+
+```
+## [1] "The mean total number of steps taken per day is 10766.19"
+```
+
+```r
+median.new.step <- median(New_steps.per_day$total.steps)
+print(paste("The median total number of steps taken per day is", format(median.new.step, nsmall = 2, digits = 2)))
+```
+
+```
+## [1] "The median total number of steps taken per day is 10766.19"
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+
+
