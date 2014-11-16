@@ -12,6 +12,12 @@ if(!is.element("dplyr", installed.packages()[,1])){
 }
 
 library(dplyr)
+
+if(!is.element("lattice", installed.packages()[,1])){
+    install.packages("lattice")
+}
+
+library(lattice)
 ```
 
 
@@ -271,6 +277,48 @@ print(paste("The median total number of steps taken per day is", format(median.n
 ```
 ## [1] "The median total number of steps taken per day is 10766.19"
 ```
+
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Modify the data to have a new column based on "weekday" and "weekend"
+
+
+```r
+week_data <- imputed_data %>% 
+  select(steps, date, interval) %>% 
+  mutate(date = as.Date(date)) %>% 
+  mutate(day = ifelse(weekdays(date) %in% c("Friday", "Saturday"), "weekend", "weekday")) %>%
+  mutate( day = factor(day))
+```
+
+Calculate Number of Steps per day
+
+
+```r
+weekdayStep <- week_data %>% 
+  select(steps, interval, day) %>% 
+  filter(day == "weekday") %>%
+  group_by(interval) %>% 
+  summarize(total.steps = mean(steps)) %>%
+  mutate(day = "weekday")
+
+weekendStep <- week_data %>% 
+  select(steps, interval, day) %>% 
+  filter(day == "weekend") %>%
+  group_by(interval) %>% 
+  summarize(total.steps = mean(steps)) %>%
+  mutate(day = "weekend")
+
+total_step <- rbind(weekdayStep,weekendStep) %>%
+  mutate(day = factor(day))
+
+xyplot(total.steps ~ interval | day, 
+       data = total_step, type='l',
+       layout = c(1,2))
+```
+
+![](PA1_template_files/figure-html/Newsteps-1.png) 
+
 
 
