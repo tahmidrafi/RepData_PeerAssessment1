@@ -4,14 +4,84 @@ output:
   html_document:
     keep_md: true
 ---
+```{r setoptions}
+library(knitr)
+opts_chunk$set(digits = 2)
+```
+
+## Setting up required libraries
+
+```{r loadlibrary}
+if(!is.element("dplyr", installed.packages()[,1])){
+    install.packages("dplyr")
+}
+
+library(dplyr)
+```
+
+Load and set options on knitr
+
+```{r}
+if(!is.element("knitr", installed.packages()[,1])){
+    install.packages("knitr")
+}
+
+library(knitr)
+
+```
 
 
 ## Loading and preprocessing the data
 
+First of all we need to unzip the data if not already done
 
+```{r unzipdata}
+data.zip <- "activity.zip"
+data.file <- "activity.csv"
+
+if(!file.exists(data.file)){
+    message("Unzipping File: ", data.zip)
+    unzip(zipfile = data.zip)
+}
+
+```
+
+as it is a csv file we load the file with `read.csv()` command.
+
+```{r loaddata}
+raw.data <- read.csv(data.file)
+summary(raw.data)
+```
 
 ## What is mean total number of steps taken per day?
 
+Let's take a look at the mean total number of steps taken per day.
+```{r summarizedata}
+steps.per_day <- raw.data %>% 
+  select(steps, date) %>% 
+  group_by(date) %>% 
+  summarize(total.steps = sum(steps)) %>% 
+  arrange(as.Date(date))
+
+head(steps.per_day, n=10)
+```
+
+Now let's look at the histogram of the data
+
+```{r drawhistogram}
+hist(steps.per_day$total.steps, 
+     xlab = "Total no of steps", 
+     main = "Histogram of total number of steps", 
+     col = "grey", breaks = seq(0,25000,2500))
+```
+
+```{r calcutaleMeanMedian}
+mean.step <- mean(steps.per_day$total.steps, na.rm = TRUE)
+print(paste("The mean total number of steps taken per day is", format(mean.step, nsmall = 2, digits = 2)))
+
+median.step <- mean(steps.per_day$total.steps, na.rm = TRUE)
+print(paste("The median total number of steps taken per day is", format(median.step, nsmall = 2, digits = 2)))
+```
 
 
 ## What is the average daily activity pattern?
