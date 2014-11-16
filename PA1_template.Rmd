@@ -1,33 +1,23 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: "Tahmid Rafi"
+date: "November 17, 2014"
 output: 
   html_document:
     keep_md: true
+    theme: journal
+    highlight: pygments
 ---
-```{r setoptions}
-library(knitr)
-opts_chunk$set(digits = 2)
-```
+
 
 ## Setting up required libraries
 
-```{r loadlibrary}
+```{r loadlibrary, message=FALSE}
 if(!is.element("dplyr", installed.packages()[,1])){
     install.packages("dplyr")
 }
 
 library(dplyr)
-```
-
-Load and set options on knitr
-
-```{r}
-if(!is.element("knitr", installed.packages()[,1])){
-    install.packages("knitr")
-}
-
-library(knitr)
-
 ```
 
 
@@ -50,7 +40,8 @@ as it is a csv file we load the file with `read.csv()` command.
 
 ```{r loaddata}
 raw.data <- read.csv(data.file)
-summary(raw.data)
+raw.data <- tbl_df(raw.data)
+raw.data
 ```
 
 ## What is mean total number of steps taken per day?
@@ -72,20 +63,47 @@ Now let's look at the histogram of the data
 hist(steps.per_day$total.steps, 
      xlab = "Total no of steps", 
      main = "Histogram of total number of steps", 
-     col = "grey", breaks = seq(0,25000,2500))
+     col = "grey", breaks = seq(0,25000,1000))
 ```
+
+The mean and the median of total step taken per day are as follows.
 
 ```{r calcutaleMeanMedian}
 mean.step <- mean(steps.per_day$total.steps, na.rm = TRUE)
 print(paste("The mean total number of steps taken per day is", format(mean.step, nsmall = 2, digits = 2)))
 
-median.step <- mean(steps.per_day$total.steps, na.rm = TRUE)
+median.step <- median(steps.per_day$total.steps, na.rm = TRUE)
 print(paste("The median total number of steps taken per day is", format(median.step, nsmall = 2, digits = 2)))
 ```
 
 
 ## What is the average daily activity pattern?
 
+Now, Let us analyze the average daily activity pattern. 
+
+```{r stepPerInterval}
+steps.per_interval <- raw.data %>% 
+  select(steps, interval) %>% 
+  group_by(interval) %>% 
+  summarize(mean.steps = mean(steps, na.rm = TRUE))
+```
+
+Let's draw a plot
+
+```{r drawSPI}
+plot(steps.per_interval, type= "l", 
+     xlab = "5-minute interval", ylab = "Avg. steps", 
+     main = "Daily Activity Pattern", col = "red")
+```
+
+Let's find out which time of the day or which interval has the most no of steps, averaged across all days?
+
+```{r mostSteppedInterval}
+mostStepped <- steps.per_interval %>% arrange(desc(mean.steps))
+print(mostStepped)
+```
+
+Which shows that the most stepped interval is **`r mostStepped$interval[1]`**
 
 
 ## Imputing missing values
